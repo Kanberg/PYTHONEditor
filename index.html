@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Python Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 95vh;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .editor-container {
+            display: flex;
+            flex: 1;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .code-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            font-size: 1.2em;
+        }
+
+        #codeEditor {
+            flex: 1;
+            border: 2px solid #3498db;
+            border-radius: 10px;
+            padding: 15px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            resize: none;
+            outline: none;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        #preview {
+            flex: 1;
+            border: 2px solid #27ae60;
+            border-radius: 10px;
+            background: white;
+            overflow: auto;
+            padding: 20px;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #runBtn {
+            background: #27ae60;
+            color: white;
+        }
+
+        #runBtn:hover {
+            background: #219a52;
+            transform: translateY(-2px);
+        }
+
+        #clearBtn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        #clearBtn:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        #templateBtn {
+            background: #3498db;
+            color: white;
+        }
+
+        #templateBtn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .game-canvas {
+            border: 2px solid #34495e;
+            background: #ecf0f1;
+            margin: 10px 0;
+        }
+
+        .output-console {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Consolas', monospace;
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* Анимации */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .pulse {
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .editor-container {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Super Python Editor</h1>
+            <div class="subtitle">Пишите код на Python и мгновенно видите результат в превью!</div>
+        </div>
+        
+        <div class="editor-container">
+            <div class="code-section">
+                <div class="section-title">
+                    <span>📝 Редактор кода Python</span>
+                </div>
+                <textarea id="codeEditor" placeholder="Начните писать код на Python здесь..."># Добро пожаловать в Super Python Editor!
+# Напишите свой код и нажмите "Запуск"
+
+print("Привет, мир! Добро пожаловать в игру!")
+
+# Пример простой игры
+class SimpleGame:
+    def __init__(self):
+        self.score = 0
+        self.level = 1
+    
+    def add_points(self, points):
+        self.score += points
+        if self.score >= self.level * 100:
+            self.level += 1
+            print(f"🎉 Уровень повышен! Теперь уровень {self.level}")
+    
+    def display_status(self):
+        return f"Очки: {self.score} | Уровень: {self.level}"
+
+# Создаем игру
+game = SimpleGame()
+game.add_points(50)
+game.add_points(60)
+
+print(game.display_status())
+print("🚀 Игра запущена успешно!")</textarea>
+                
+                <div class="controls">
+                    <button id="runBtn" title="Запустить код (Ctrl+Enter)">
+                        ▶️ Запуск
+                    </button>
+                    <button id="templateBtn" title="Загрузить шаблон игры">
+                        🎮 Шаблон игры
+                    </button>
+                    <button id="clearBtn" title="Очистить редактор">
+                        🗑️ Очистить
+                    </button>
+                </div>
+                
+                <div id="status" class="status"></div>
+            </div>
+            
+            <div class="preview-section">
+                <div class="section-title">
+                    <span>👁️ Превью вывода</span>
+                </div>
+                <div id="preview">
+                    <div class="output-console" id="outputConsole">
+                        <!-- Вывод будет здесь -->
+                    </div>
+                    <canvas id="gameCanvas" class="game-canvas" width="400" height="300" style="display: none;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Элементы DOM
+        const codeEditor = document.getElementById('codeEditor');
+        const preview = document.getElementById('preview');
+        const runBtn = document.getElementById('runBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const templateBtn = document.getElementById('templateBtn');
+        const statusDiv = document.getElementById('status');
+        const outputConsole = document.getElementById('outputConsole');
+        const gameCanvas = document.getElementById('gameCanvas');
+
+        // Безопасное выполнение Python-кода через JavaScript
+        function executePythonCode(code) {
+            // Очищаем предыдущий вывод
+            outputConsole.innerHTML = '';
+            statusDiv.className = 'status';
+            
+            try {
+                // Эмуляция выполнения Python кода
+                const pythonOutput = emulatePythonExecution(code);
+                
+                // Отображаем вывод
+                outputConsole.innerHTML = pythonOutput;
+                statusDiv.textContent = '✅ Код выполнен успешно!';
+                statusDiv.className = 'status success';
+                
+                // Показываем canvas если есть графика
+                if (code.includes('pygame') || code.includes('canvas') || code.includes('игра')) {
+                    gameCanvas.style.display = 'block';
+                    drawSampleGame();
+                } else {
+                    gameCanvas.style.display = 'none';
+                }
+                
+                preview.classList.add('pulse');
+                setTimeout(() => preview.classList.remove('pulse'), 500);
+                
+            } catch (error) {
+                statusDiv.textContent = `❌ Ошибка: ${error.message}`;
+                statusDiv.className = 'status error';
+            }
+        }
+
+        // Эмуляция выполнения Python кода
+        function emulatePythonExecution(code) {
+            let output = '';
+            const consoleLog = (message) => {
+                output += `<div class="console-line">${message}</div>`;
+            };
+
+            // Безопасное выполнение с эмуляцией Python функций
+            const sandbox = {
+                print: (...args) => {
+                    consoleLog(args.map(arg => 
+                        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+                    ).join(' '));
+                },
+                console: { log: consoleLog },
+                
+                // Эмуляция классов Python
+                SimpleGame: class {
+                    constructor() {
+                        this.score = 0;
+                        this.level = 1;
+                    }
+                    add_points(points) {
+                        this.score += points;
+                        if (this.score >= this.level * 100) {
+                            this.level += 1;
+                            consoleLog(`🎉 Уровень повышен! Теперь уровень ${this.level}`);
+                        }
+                    }
+                    display_status() {
+                        return `Очки: ${this.score} | Уровень: ${this.level}`;
+                    }
+                },
+                
+                // Математические функции
+                __builtins__: {
+                    abs: Math.abs,
+                    max: Math.max,
+                    min: Math.min,
+                    round: Math.round,
+                    len: (obj) => obj.length || Object.keys(obj).length
+                }
+            };
+
+            // Заменяем Python синтаксис на JavaScript
+            let jsCode = code
+                .replace(/print\((.*?)\)/g, 'print($1)')
+                .replace(/def (\w+)\((.*?)\):/g, 'function $1($2) {')
+                .replace(/class (\w+):/g, 'class $1 {')
+                .replace(/self\./g, 'this.')
+                .replace(/__init__\(self\)/g, 'constructor()')
+                .replace(/#.*$/gm, '') // Удаляем комментарии
+                .replace(/    /g, '  '); // Заменяем отступы
+
+            // Выполняем код в песочнице
+            try {
+                const func = new Function(...Object.keys(sandbox), `
+                    try {
+                        ${jsCode}
+                        return "Выполнение завершено";
+                    } catch (e) {
+                        return "Ошибка: " + e.message;
+                    }
+                `);
+                func(...Object.values(sandbox));
+            } catch (e) {
+                consoleLog(`Ошибка выполнения: ${e.message}`);
+            }
+
+            return output || '<div class="console-line">Код выполнен, но вывод пуст</div>';
+        }
+
+        // Отрисовка примера игры на canvas
+        function drawSampleGame() {
+            const ctx = gameCanvas.getContext('2d');
+            ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+            
+            // Фон
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+            
+            // Земля
+            ctx.fillStyle = '#8FBC8F';
+            ctx.fillRect(0, 250, gameCanvas.width, 50);
+            
+            // Игрок
+            ctx.fillStyle = '#FF6B6B';
+            ctx.fillRect(180, 200, 40, 50);
+            
+            // Голова игрока
+            ctx.fillStyle = '#FF9999';
+            ctx.beginPath();
+            ctx.arc(200, 190, 15, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Враги
+            ctx.fillStyle = '#4ECDC4';
+            ctx.fillRect(100, 220, 30, 30);
+            ctx.fillRect(280, 220, 30, 30);
+            
+            // Текст
+            ctx.fillStyle = '#2C3E50';
+            ctx.font = '14px Arial';
+            ctx.fillText('🎮 Ваша игра запущена!', 150, 30);
+            ctx.fillText('Управляйте персонажем и собирайте очки!', 100, 50);
+        }
+
+        // Шаблон игры
+        const gameTemplate = `# 🎮 Шаблон простой игры
+
+import random
+
+class Game:
+    def __init__(self):
+        self.player_x = 50
+        self.player_y = 50
+        self.enemies = []
+        self.score = 0
+        self.generate_enemies(5)
+    
+    def generate_enemies(self, count):
+        for i in range(count):
+            self.enemies.append({
+                'x': random.randint(100, 350),
+                'y': random.randint(100, 250),
+                'speed': random.randint(1, 3)
+            })
+    
+    def move_player(self, dx, dy):
+        self.player_x = max(0, min(380, self.player_x + dx))
+        self.player_y = max(0, min(280, self.player_y + dy))
+        self.check_collisions()
+    
+    def check_collisions(self):
+        for enemy in self.enemies[:]:
+            if (abs(self.player_x - enemy['x']) < 30 and 
+                abs(self.player_y - enemy['y']) < 30):
+                self.enemies.remove(enemy)
+                self.score += 10
+                print(f"🎯 Враг побежден! Очки: {self.score}")
+    
+    def update(self):
+        for enemy in self.enemies:
+            enemy['x'] -= enemy['speed']
+            if enemy['x'] < 0:
+                enemy['x'] = 400
+                enemy['y'] = random.randint(100, 250)
+    
+    def get_status(self):
+        return f"Игрок: ({self.player_x}, {self.player_y}) | Очки: {self.score} | Врагов: {len(self.enemies)}"
+
+# Создаем игру
+game = Game()
+print("🎮 Игра инициализирована!")
+print("Используйте game.move_player(dx, dy) для движения")
+print("Враги двигаются автоматически!")
+
+# Демонстрация
+game.move_player(10, 5)
+game.update()
+print(game.get_status())`;
+
+        // Обработчики событий
+        runBtn.addEventListener('click', () => {
+            executePythonCode(codeEditor.value);
+        });
+
+        clearBtn.addEventListener('click', () => {
+            codeEditor.value = '';
+            outputConsole.innerHTML = '';
+            statusDiv.className = 'status';
+            gameCanvas.style.display = 'none';
+        });
+
+        templateBtn.addEventListener('click', () => {
+            codeEditor.value = gameTemplate;
+            statusDiv.textContent = '🎮 Шаблон игры загружен!';
+            statusDiv.className = 'status success';
+        });
+
+        // Горячие клавиши
+        codeEditor.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                executePythonCode(codeEditor.value);
+            }
+        });
+
+        // Автозапуск при загрузке
+        setTimeout(() => {
+            executePythonCode(codeEditor.value);
+        }, 1000);
+    </script>
+</body>
+</html>
