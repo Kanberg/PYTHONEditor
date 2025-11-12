@@ -1,9 +1,13 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super Python Editor</title>
+    <title>Python SuperEditor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script async src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
     <style>
         * {
             margin: 0;
@@ -12,510 +16,375 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            color: #e0e0e0;
+            height: 100vh;
+            overflow: hidden;
         }
 
         .container {
             display: flex;
-            flex-direction: column;
-            height: 95vh;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+            height: 100vh;
+            gap: 0;
         }
 
-        .header {
-            background: #2c3e50;
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-
-        .header .subtitle {
-            font-size: 1.2em;
-            opacity: 0.9;
-        }
-
-        .editor-container {
-            display: flex;
-            flex: 1;
-            gap: 20px;
-            padding: 20px;
-        }
-
-        .code-section {
+        .editor-section {
             flex: 1;
             display: flex;
             flex-direction: column;
+            background: #1e1e2e;
+            border-right: 3px solid #ff6b6b;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
         }
 
         .preview-section {
             flex: 1;
             display: flex;
             flex-direction: column;
+            background: #0f0f1e;
+            overflow: hidden;
         }
 
-        .section-title {
-            font-size: 1.3em;
+        .header {
+            background: linear-gradient(90deg, #ff6b6b 0%, #ff8787 100%);
+            padding: 15px 20px;
+            font-size: 18px;
             font-weight: bold;
-            margin-bottom: 10px;
-            color: #2c3e50;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 10px;
         }
 
-        .section-title i {
-            font-size: 1.2em;
-        }
-
-        #codeEditor {
-            flex: 1;
-            border: 2px solid #3498db;
-            border-radius: 10px;
-            padding: 15px;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 14px;
-            line-height: 1.5;
-            background: #1e1e1e;
-            color: #d4d4d4;
-            resize: none;
-            outline: none;
-            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
-        }
-
-        #preview {
-            flex: 1;
-            border: 2px solid #27ae60;
-            border-radius: 10px;
-            background: white;
-            overflow: auto;
-            padding: 20px;
-            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .controls {
+        .header-right {
             display: flex;
             gap: 10px;
-            margin-top: 10px;
+            align-items: center;
         }
 
-        button {
-            padding: 12px 25px;
+        .run-button {
+            background: #4ecdc4;
+            color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
+            padding: 8px 20px;
+            border-radius: 5px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s;
         }
 
-        #runBtn {
-            background: #27ae60;
+        .run-button:hover {
+            background: #45b8af;
+            transform: scale(1.05);
+        }
+
+        .run-button:active {
+            transform: scale(0.95);
+        }
+
+        .clear-button {
+            background: #f0a500;
             color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s;
         }
 
-        #runBtn:hover {
-            background: #219a52;
-            transform: translateY(-2px);
-        }
-
-        #clearBtn {
-            background: #e74c3c;
-            color: white;
-        }
-
-        #clearBtn:hover {
-            background: #c0392b;
-            transform: translateY(-2px);
-        }
-
-        #templateBtn {
-            background: #3498db;
-            color: white;
-        }
-
-        #templateBtn:hover {
-            background: #2980b9;
-            transform: translateY(-2px);
+        .clear-button:hover {
+            background: #e89500;
         }
 
         .status {
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 5px;
+            font-size: 12px;
+            padding: 5px 10px;
+            background: rgba(255, 107, 107, 0.2);
+            border-radius: 3px;
+        }
+
+        textarea {
+            flex: 1;
+            background: #1e1e2e;
+            color: #e0e0e0;
+            border: none;
+            padding: 20px;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 16px;
+            resize: none;
+            outline: none;
+            line-height: 1.6;
+            tab-size: 4;
+            -moz-tab-size: 4;
+        }
+
+        textarea::selection {
+            background: #4ecdc4;
+            color: #1e1e2e;
+        }
+
+        .preview-header {
+            background: linear-gradient(90deg, #4ecdc4 0%, #45b8af 100%);
+            padding: 15px 20px;
+            font-size: 18px;
             font-weight: bold;
-            text-align: center;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
-        .status.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+        .preview-content {
+            flex: 1;
+            background: #0a0a14;
+            overflow: auto;
+            padding: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #00ff88;
+            border: 1px solid #4ecdc4;
+            margin: 10px;
+            border-radius: 8px;
+            box-shadow: inset 0 0 20px rgba(78, 205, 196, 0.1);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            scrollbar-width: thin;
+            scrollbar-color: #4ecdc4 #1e1e2e;
         }
 
-        .status.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+        .preview-content::-webkit-scrollbar {
+            width: 10px;
         }
 
-        .game-canvas {
-            border: 2px solid #34495e;
-            background: #ecf0f1;
-            margin: 10px 0;
+        .preview-content::-webkit-scrollbar-track {
+            background: #1e1e2e;
         }
 
-        .output-console {
-            background: #2c3e50;
-            color: #ecf0f1;
-            padding: 15px;
+        .preview-content::-webkit-scrollbar-thumb {
+            background: #4ecdc4;
             border-radius: 5px;
-            font-family: 'Consolas', monospace;
-            margin-top: 10px;
-            max-height: 200px;
-            overflow-y: auto;
         }
 
-        /* Анимации */
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+        .preview-content::-webkit-scrollbar-thumb:hover {
+            background: #45b8af;
         }
 
-        .pulse {
-            animation: pulse 0.5s ease-in-out;
+        .error {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+            padding: 10px;
+            border-left: 3px solid #ff6b6b;
+            border-radius: 3px;
+            margin: 5px 0;
         }
 
-        /* Адаптивность */
-        @media (max-width: 768px) {
-            .editor-container {
+        .success {
+            color: #00ff88;
+        }
+
+        .warning {
+            color: #ffeb3b;
+        }
+
+        .loading {
+            color: #4ecdc4;
+            font-style: italic;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+            margin: auto;
+            border-radius: 8px;
+            background: #000;
+        }
+
+        .canvas-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex: 1;
+            background: #0a0a14;
+        }
+
+        @media (max-width: 1200px) {
+            .container {
                 flex-direction: column;
             }
-            
-            .header h1 {
-                font-size: 2em;
+
+            .editor-section {
+                border-right: none;
+                border-bottom: 3px solid #ff6b6b;
+                min-height: 50%;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🚀 Super Python Editor</h1>
-            <div class="subtitle">Пишите код на Python и мгновенно видите результат в превью!</div>
-        </div>
-        
-        <div class="editor-container">
-            <div class="code-section">
-                <div class="section-title">
-                    <span>📝 Редактор кода Python</span>
+        <div class="editor-section">
+            <div class="header">
+                <span>ðŸ Python SuperEditor</span>
+                <div class="header-right">
+                    <span class="status" id="status">Ð³Ð¾Ñ‚Ð¾Ð²</span>
+                    <button class="run-button" onclick="runCode()">â–¶ Ð—Ð°Ð¿ÑƒÑÑ‚Ð¸Ñ‚ÑŒ (Ctrl+Enter)</button>
+                    <button class="clear-button" onclick="clearOutput()">âœ• ÐžÑ‡Ð¸ÑÑ‚Ð¸Ñ‚ÑŒ</button>
                 </div>
-                <textarea id="codeEditor" placeholder="Начните писать код на Python здесь..."># Добро пожаловать в Super Python Editor!
-# Напишите свой код и нажмите "Запуск"
-
-print("Привет, мир! Добро пожаловать в игру!")
-
-# Пример простой игры
-class SimpleGame:
-    def __init__(self):
-        self.score = 0
-        self.level = 1
-    
-    def add_points(self, points):
-        self.score += points
-        if self.score >= self.level * 100:
-            self.level += 1
-            print(f"🎉 Уровень повышен! Теперь уровень {self.level}")
-    
-    def display_status(self):
-        return f"Очки: {self.score} | Уровень: {self.level}"
-
-# Создаем игру
-game = SimpleGame()
-game.add_points(50)
-game.add_points(60)
-
-print(game.display_status())
-print("🚀 Игра запущена успешно!")</textarea>
-                
-                <div class="controls">
-                    <button id="runBtn" title="Запустить код (Ctrl+Enter)">
-                        ▶️ Запуск
-                    </button>
-                    <button id="templateBtn" title="Загрузить шаблон игры">
-                        🎮 Шаблон игры
-                    </button>
-                    <button id="clearBtn" title="Очистить редактор">
-                        🗑️ Очистить
-                    </button>
-                </div>
-                
-                <div id="status" class="status"></div>
             </div>
-            
-            <div class="preview-section">
-                <div class="section-title">
-                    <span>👁️ Превью вывода</span>
-                </div>
-                <div id="preview">
-                    <div class="output-console" id="outputConsole">
-                        <!-- Вывод будет здесь -->
-                    </div>
-                    <canvas id="gameCanvas" class="game-canvas" width="400" height="300" style="display: none;"></canvas>
-                </div>
+            <textarea id="codeInput" placeholder="ÐŸÐ¸ÑˆÐ¸Ñ‚Ðµ ÐºÐ¾Ð´ Python Ð·Ð´ÐµÑÑŒ...
+# ÐÐ°Ð¿Ñ€Ð¸Ð¼ÐµÑ€:
+print('Hello, World!')
+
+# Ð˜Ð»Ð¸ Ð´Ð°Ð¶Ðµ Ð¿Ñ€Ð¾ÑÑ‚ÑƒÑŽ Ð¸Ð³Ñ€Ñƒ:
+import sys
+print('Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ñ‡Ð¸ÑÐ»Ð¾ Ð¾Ñ‚ 1 Ð´Ð¾ 10:')" spellcheck="false"></textarea>
+        </div>
+
+        <div class="preview-section">
+            <div class="preview-header">
+                ðŸ“º Live Preview
+            </div>
+            <div id="previewContainer" class="preview-content">
+                Ð’Ñ‹Ð²Ð¾Ð´ Ð¿Ñ€Ð¾Ð³Ñ€Ð°Ð¼Ð¼Ñ‹ Ð±ÑƒÐ´ÐµÑ‚ Ð·Ð´ÐµÑÑŒ...
             </div>
         </div>
     </div>
 
     <script>
-        // Элементы DOM
-        const codeEditor = document.getElementById('codeEditor');
-        const preview = document.getElementById('preview');
-        const runBtn = document.getElementById('runBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const templateBtn = document.getElementById('templateBtn');
-        const statusDiv = document.getElementById('status');
-        const outputConsole = document.getElementById('outputConsole');
-        const gameCanvas = document.getElementById('gameCanvas');
+        let pyodide;
+        let isRunning = false;
 
-        // Безопасное выполнение Python-кода через JavaScript
-        function executePythonCode(code) {
-            // Очищаем предыдущий вывод
-            outputConsole.innerHTML = '';
-            statusDiv.className = 'status';
-            
+        // Ð˜Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ñ Pyodide
+        async function initPyodide() {
             try {
-                // Эмуляция выполнения Python кода
-                const pythonOutput = emulatePythonExecution(code);
-                
-                // Отображаем вывод
-                outputConsole.innerHTML = pythonOutput;
-                statusDiv.textContent = '✅ Код выполнен успешно!';
-                statusDiv.className = 'status success';
-                
-                // Показываем canvas если есть графика
-                if (code.includes('pygame') || code.includes('canvas') || code.includes('игра')) {
-                    gameCanvas.style.display = 'block';
-                    drawSampleGame();
-                } else {
-                    gameCanvas.style.display = 'none';
-                }
-                
-                preview.classList.add('pulse');
-                setTimeout(() => preview.classList.remove('pulse'), 500);
-                
+                pyodide = await loadPyodide();
+                updateStatus('Ð³Ð¾Ñ‚Ð¾Ð²');
+                addLog('Python Ð¸Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð¸Ñ€Ð¾Ð²Ð°Ð½!', 'success');
             } catch (error) {
-                statusDiv.textContent = `❌ Ошибка: ${error.message}`;
-                statusDiv.className = 'status error';
+                addLog('ÐžÑˆÐ¸Ð±ÐºÐ° Ð¸Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ð¸: ' + error.message, 'error');
             }
         }
 
-        // Эмуляция выполнения Python кода
-        function emulatePythonExecution(code) {
+        // ÐŸÐµÑ€ÐµÑ…Ð²Ð°Ñ‚ Ð²Ñ‹Ð²Ð¾Ð´Ð° Python
+        function captureOutput() {
             let output = '';
-            const consoleLog = (message) => {
-                output += `<div class="console-line">${message}</div>`;
-            };
-
-            // Безопасное выполнение с эмуляцией Python функций
-            const sandbox = {
-                print: (...args) => {
-                    consoleLog(args.map(arg => 
-                        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-                    ).join(' '));
+            const originalLog = console.log;
+            
+            return {
+                write: (text) => {
+                    output += text;
+                    return text.length;
                 },
-                console: { log: consoleLog },
-                
-                // Эмуляция классов Python
-                SimpleGame: class {
-                    constructor() {
-                        this.score = 0;
-                        this.level = 1;
-                    }
-                    add_points(points) {
-                        this.score += points;
-                        if (this.score >= this.level * 100) {
-                            this.level += 1;
-                            consoleLog(`🎉 Уровень повышен! Теперь уровень ${this.level}`);
-                        }
-                    }
-                    display_status() {
-                        return `Очки: ${this.score} | Уровень: ${this.level}`;
-                    }
-                },
-                
-                // Математические функции
-                __builtins__: {
-                    abs: Math.abs,
-                    max: Math.max,
-                    min: Math.min,
-                    round: Math.round,
-                    len: (obj) => obj.length || Object.keys(obj).length
-                }
+                getOutput: () => output
             };
+        }
 
-            // Заменяем Python синтаксис на JavaScript
-            let jsCode = code
-                .replace(/print\((.*?)\)/g, 'print($1)')
-                .replace(/def (\w+)\((.*?)\):/g, 'function $1($2) {')
-                .replace(/class (\w+):/g, 'class $1 {')
-                .replace(/self\./g, 'this.')
-                .replace(/__init__\(self\)/g, 'constructor()')
-                .replace(/#.*$/gm, '') // Удаляем комментарии
-                .replace(/    /g, '  '); // Заменяем отступы
+        // Ð—Ð°Ð¿ÑƒÑÐº ÐºÐ¾Ð´Ð°
+        async function runCode() {
+            if (!pyodide) {
+                addLog('Python ÐµÑ‰Ñ‘ Ð¸Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð¸Ñ€ÑƒÐµÑ‚ÑÑ... Ð¿Ð¾Ð´Ð¾Ð¶Ð´Ð¸Ñ‚Ðµ', 'warning');
+                return;
+            }
 
-            // Выполняем код в песочнице
+            if (isRunning) {
+                addLog('ÐŸÑ€Ð¾Ð³Ñ€Ð°Ð¼Ð¼Ð° ÑƒÐ¶Ðµ Ð²Ñ‹Ð¿Ð¾Ð»Ð½ÑÐµÑ‚ÑÑ...', 'warning');
+                return;
+            }
+
+            isRunning = true;
+            updateStatus('Ð²Ñ‹Ð¿Ð¾Ð»Ð½ÑÐµÑ‚ÑÑ');
+            
+            const code = document.getElementById('codeInput').value;
+            
+            if (!code.trim()) {
+                addLog('ÐšÐ¾Ð´ Ð¿ÑƒÑÑ‚! ÐÐ°Ð¿Ð¸ÑˆÐ¸Ñ‚Ðµ Ñ‡Ñ‚Ð¾-Ð½Ð¸Ð±ÑƒÐ´ÑŒ.', 'warning');
+                isRunning = false;
+                updateStatus('Ð³Ð¾Ñ‚Ð¾Ð²');
+                return;
+            }
+
+            clearOutput();
+
             try {
-                const func = new Function(...Object.keys(sandbox), `
-                    try {
-                        ${jsCode}
-                        return "Выполнение завершено";
-                    } catch (e) {
-                        return "Ошибка: " + e.message;
-                    }
+                // ÐŸÐµÑ€ÐµÑ…Ð²Ð°Ñ‚Ñ‹Ð²Ð°ÐµÐ¼ sys.stdout
+                pyodide.runPython(`
+import sys
+from io import StringIO
+sys.stdout = StringIO()
                 `);
-                func(...Object.values(sandbox));
-            } catch (e) {
-                consoleLog(`Ошибка выполнения: ${e.message}`);
+
+                // Ð’Ñ‹Ð¿Ð¾Ð»Ð½ÑÐµÐ¼ ÐºÐ¾Ð´ Ð¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ñ‚ÐµÐ»Ñ
+                pyodide.runPython(code);
+
+                // ÐŸÐ¾Ð»ÑƒÑ‡Ð°ÐµÐ¼ Ð²Ñ‹Ð²Ð¾Ð´
+                const output = pyodide.runPython(`sys.stdout.getvalue()`);
+                
+                if (output) {
+                    addLog(output, 'success');
+                } else {
+                    addLog('ÐŸÑ€Ð¾Ð³Ñ€Ð°Ð¼Ð¼Ð° Ð²Ñ‹Ð¿Ð¾Ð»Ð½ÐµÐ½Ð° Ð±ÐµÐ· Ð²Ñ‹Ð²Ð¾Ð´Ð°', 'warning');
+                }
+
+                updateStatus('Ð³Ð¾Ñ‚Ð¾Ð²');
+            } catch (error) {
+                let errorMessage = error.toString();
+                if (error.message) {
+                    errorMessage = error.message;
+                }
+                addLog('âŒ ÐžÑˆÐ¸Ð±ÐºÐ°:\n' + errorMessage, 'error');
+                updateStatus('Ð¾ÑˆÐ¸Ð±ÐºÐ°');
             }
 
-            return output || '<div class="console-line">Код выполнен, но вывод пуст</div>';
+            isRunning = false;
+            updateStatus('Ð³Ð¾Ñ‚Ð¾Ð²');
         }
 
-        // Отрисовка примера игры на canvas
-        function drawSampleGame() {
-            const ctx = gameCanvas.getContext('2d');
-            ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
-            
-            // Фон
-            ctx.fillStyle = '#87CEEB';
-            ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
-            
-            // Земля
-            ctx.fillStyle = '#8FBC8F';
-            ctx.fillRect(0, 250, gameCanvas.width, 50);
-            
-            // Игрок
-            ctx.fillStyle = '#FF6B6B';
-            ctx.fillRect(180, 200, 40, 50);
-            
-            // Голова игрока
-            ctx.fillStyle = '#FF9999';
-            ctx.beginPath();
-            ctx.arc(200, 190, 15, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Враги
-            ctx.fillStyle = '#4ECDC4';
-            ctx.fillRect(100, 220, 30, 30);
-            ctx.fillRect(280, 220, 30, 30);
-            
-            // Текст
-            ctx.fillStyle = '#2C3E50';
-            ctx.font = '14px Arial';
-            ctx.fillText('🎮 Ваша игра запущена!', 150, 30);
-            ctx.fillText('Управляйте персонажем и собирайте очки!', 100, 50);
+        // Ð”Ð¾Ð±Ð°Ð²Ð»ÐµÐ½Ð¸Ðµ Ð»Ð¾Ð³Ð° Ð² preview
+        function addLog(message, type = 'success') {
+            const preview = document.getElementById('previewContainer');
+            const logElement = document.createElement('div');
+            logElement.className = type;
+            logElement.textContent = message;
+            preview.appendChild(logElement);
+            preview.scrollTop = preview.scrollHeight;
         }
 
-        // Шаблон игры
-        const gameTemplate = `# 🎮 Шаблон простой игры
+        // ÐžÑ‡Ð¸ÑÑ‚ÐºÐ° Ð²Ñ‹Ð²Ð¾Ð´Ð°
+        function clearOutput() {
+            document.getElementById('previewContainer').innerHTML = '';
+        }
 
-import random
+        // ÐžÐ±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ðµ ÑÑ‚Ð°Ñ‚ÑƒÑÐ°
+        function updateStatus(status) {
+            document.getElementById('status').textContent = status;
+        }
 
-class Game:
-    def __init__(self):
-        self.player_x = 50
-        self.player_y = 50
-        self.enemies = []
-        self.score = 0
-        self.generate_enemies(5)
-    
-    def generate_enemies(self, count):
-        for i in range(count):
-            self.enemies.append({
-                'x': random.randint(100, 350),
-                'y': random.randint(100, 250),
-                'speed': random.randint(1, 3)
-            })
-    
-    def move_player(self, dx, dy):
-        self.player_x = max(0, min(380, self.player_x + dx))
-        self.player_y = max(0, min(280, self.player_y + dy))
-        self.check_collisions()
-    
-    def check_collisions(self):
-        for enemy in self.enemies[:]:
-            if (abs(self.player_x - enemy['x']) < 30 and 
-                abs(self.player_y - enemy['y']) < 30):
-                self.enemies.remove(enemy)
-                self.score += 10
-                print(f"🎯 Враг побежден! Очки: {self.score}")
-    
-    def update(self):
-        for enemy in self.enemies:
-            enemy['x'] -= enemy['speed']
-            if enemy['x'] < 0:
-                enemy['x'] = 400
-                enemy['y'] = random.randint(100, 250)
-    
-    def get_status(self):
-        return f"Игрок: ({self.player_x}, {self.player_y}) | Очки: {self.score} | Врагов: {len(self.enemies)}"
-
-# Создаем игру
-game = Game()
-print("🎮 Игра инициализирована!")
-print("Используйте game.move_player(dx, dy) для движения")
-print("Враги двигаются автоматически!")
-
-# Демонстрация
-game.move_player(10, 5)
-game.update()
-print(game.get_status())`;
-
-        // Обработчики событий
-        runBtn.addEventListener('click', () => {
-            executePythonCode(codeEditor.value);
-        });
-
-        clearBtn.addEventListener('click', () => {
-            codeEditor.value = '';
-            outputConsole.innerHTML = '';
-            statusDiv.className = 'status';
-            gameCanvas.style.display = 'none';
-        });
-
-        templateBtn.addEventListener('click', () => {
-            codeEditor.value = gameTemplate;
-            statusDiv.textContent = '🎮 Шаблон игры загружен!';
-            statusDiv.className = 'status success';
-        });
-
-        // Горячие клавиши
-        codeEditor.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key === 'Enter') {
+        // Ð“Ð¾Ñ€ÑÑ‡Ð¸Ðµ ÐºÐ»Ð°Ð²Ð¸ÑˆÐ¸
+        document.getElementById('codeInput').addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                runCode();
+            }
+            
+            // Tab Ð´Ð»Ñ Ð¾Ñ‚ÑÑ‚ÑƒÐ¿Ð°
+            if (e.key === 'Tab') {
                 e.preventDefault();
-                executePythonCode(codeEditor.value);
+                const textarea = e.target;
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                textarea.value = textarea.value.substring(0, start) + '\t' + textarea.value.substring(end);
+                textarea.selectionStart = textarea.selectionEnd = start + 1;
             }
         });
 
-        // Автозапуск при загрузке
-        setTimeout(() => {
-            executePythonCode(codeEditor.value);
-        }, 1000);
+        // Ð˜Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ñ Ð¿Ñ€Ð¸ Ð·Ð°Ð³Ñ€ÑƒÐ·ÐºÐµ ÑÑ‚Ñ€Ð°Ð½Ð¸Ñ†Ñ‹
+        window.addEventListener('load', () => {
+            initPyodide();
+        });
     </script>
 </body>
 </html>
